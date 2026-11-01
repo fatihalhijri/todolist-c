@@ -35,4 +35,19 @@ void main() {
     expect(changed.isDone, isTrue);
     expect(changed.id, '1');
   });
+
+  test('toJson lalu fromJson menghasilkan data yang sama', () {
+    final original = task.copyWith(isDone: true);
+
+    final restored = Task.fromJson(original.toJson());
+
+    expect(restored.id, original.id);
+    expect(restored.title, original.title);
+    expect(restored.isDone, original.isDone);
+    expect(restored.createdAt, original.createdAt);
+  });
+
+  test('toJson menyimpan createdAt sebagai teks ISO 8601', () {
+    expect(task.toJson()['createdAt'], '2026-11-01T08:30:00.000');
+  });
 }

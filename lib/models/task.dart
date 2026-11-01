@@ -11,10 +11,36 @@ class Task {
     required this.createdAt,
   });
 
+  /// Membuat Task dari Map hasil `jsonDecode`.
+  ///
+  /// `factory` adalah konstruktor yang boleh menjalankan kode dulu sebelum
+  /// mengembalikan objek. Jika bentuk datanya salah, `as` akan melempar
+  /// TypeError; error itu ditangani oleh TaskStorage.
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      isDone: json['isDone'] as bool,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+    );
+  }
+
   final String id;
   final String title;
   final bool isDone;
   final DateTime createdAt;
+
+  /// Mengubah Task menjadi Map agar bisa diubah ke teks JSON.
+  /// DateTime tidak dikenal JSON, jadi disimpan sebagai teks ISO 8601
+  /// (contoh: "2026-11-01T08:30:00.000").
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'isDone': isDone,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
 
   /// Membuat salinan tugas. Field yang diberikan diganti, sisanya
   /// memakai nilai lama (operator `??` artinya "kalau null, pakai yang kanan").
