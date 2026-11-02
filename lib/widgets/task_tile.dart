@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import '../models/task.dart';
 
 /// Satu baris tugas: checkbox dan judul, bisa digeser untuk dihapus.
+///
+/// Ketuk kotak centang untuk mengubah status; ketuk judul untuk mengedit.
 class TaskTile extends StatelessWidget {
   const TaskTile({
     super.key,
     required this.task,
     required this.onToggle,
     required this.onDelete,
+    required this.onEdit,
   });
 
   final Task task;
@@ -16,6 +19,7 @@ class TaskTile extends StatelessWidget {
   /// VoidCallback = fungsi tanpa parameter dan tanpa nilai kembali.
   final VoidCallback onToggle;
   final VoidCallback onDelete;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -34,11 +38,14 @@ class TaskTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Icon(Icons.delete, color: colorScheme.onError),
       ),
-      child: CheckboxListTile(
-        value: task.isDone,
-        // Checkbox mengirim nilai baru, tapi kita cukup membalik status.
-        onChanged: (_) => onToggle(),
-        controlAffinity: ListTileControlAffinity.leading,
+      // ListTile + Checkbox terpisah (bukan CheckboxListTile), supaya
+      // mengetuk judul bisa dipakai untuk edit, bukan ikut mencentang.
+      child: ListTile(
+        leading: Checkbox(
+          value: task.isDone,
+          // Checkbox mengirim nilai baru, tapi kita cukup membalik status.
+          onChanged: (_) => onToggle(),
+        ),
         title: Text(
           task.title,
           style: TextStyle(
@@ -46,6 +53,7 @@ class TaskTile extends StatelessWidget {
             color: task.isDone ? colorScheme.outline : null,
           ),
         ),
+        onTap: onEdit,
       ),
     );
   }

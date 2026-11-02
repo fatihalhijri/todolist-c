@@ -17,6 +17,16 @@ class TodoApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
       ),
+      // Tema gelap memakai warna dasar yang sama; Brightness.dark membuat
+      // fromSeed menghasilkan latar gelap dan teks terang.
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.teal,
+          brightness: Brightness.dark,
+        ),
+      ),
+      // system = ikuti pengaturan terang/gelap di HP.
+      themeMode: ThemeMode.system,
       home: const HomeScreen(),
     );
   }

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../models/task.dart';
+import '../models/task_filter.dart';
 import '../services/task_storage.dart';
+import '../widgets/edit_task_dialog.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/filter_bar.dart';
+import '../widgets/task_counter.dart';
 import '../widgets/task_input.dart';
-import '../widgets/task_tile.dart';
+import '../widgets/task_list.dart';
 
 /// Halaman utama: memegang daftar tugas dan semua aksi terhadapnya.
 ///
@@ -22,6 +26,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final _storage = TaskStorage();
   List<Task> _tasks = [];
   bool _isLoading = true;
+  TaskFilter _filter = TaskFilter.all;
+
+  // Tugas yang tampil sesuai filter. where() membuat daftar baru, jadi
+  // _tasks (data asli yang disimpan) tidak ikut berubah.
+  List<Task> get _visibleTasks => _tasks.where(_filter.matches).toList();
 
   // initState dipanggil sekali saat halaman pertama kali dibuat, cocok untuk
   // memulai pemuatan data. initState tidak boleh async, jadi pemuatannya
@@ -55,12 +64,21 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _showMessage(String message) {
+  void _showMessage(String message, {SnackBarAction? action}) {
     // ScaffoldMessenger mengatur SnackBar untuk seluruh aplikasi.
     // hideCurrentSnackBar agar SnackBar lama tidak antre saat muncul beruntun.
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          action: action,
+          // SnackBar yang punya tombol aksi secara bawaan tidak hilang
+          // sendiri; persist: false membuatnya tetap hilang setelah beberapa
+          // detik.
+          persist: false,
+        ),
+      );
   }
 
   // setState memberi tahu Flutter bahwa data berubah, sehingga build()
@@ -89,12 +107,74 @@ class _HomeScreenState extends State<HomeScreen> {
     _saveTasks();
   }
 
-  void _deleteTask(Task task) {
+  Future<void> _editTask(Task task) async {
+    // showDialog menampilkan dialog dan menunggu sampai ditutup. Hasilnya
+    // adalah nilai yang dikirim lewat Navigator.pop di dalam dialog.
+    final newTitle = await showDialog<String>(
+      context: context,
+      builder: (context) => EditTaskDialog(initialTitle: task.title),
+    );
+    if (!mounted || newTitle == null || newTitle == task.title) return;
+
+    final index = _tasks.indexWhere((t) => t.id == task.id);
+    // Berjaga-jaga jika tugas sudah terhapus selama dialog terbuka.
+    if (index == -1) return;
+
     setState(() {
-      _tasks.removeWhere((t) => t.id == task.id);
+      _tasks[index] = _tasks[index].copyWith(title: newTitle);
     });
-    _showMessage('Tugas "${task.title}" dihapus');
     _saveTasks();
+  }
+
+  void _deleteTask(Task task) {
+    // Posisi diingat dulu supaya "Batalkan" bisa mengembalikan tugas ke
+    // tempat semula. Tugas dan posisinya ditangkap oleh fungsi onPressed
+    // di bawah, jadi tidak perlu disimpan di variabel State.
+    final index = _tasks.indexWhere((t) => t.id == task.id);
+    setState(() {
+      _tasks.removeAt(index);
+    });
+    _showMessage(
+      'Tugas "${task.title}" dihapus',
+      action: SnackBarAction(
+        label: 'Batalkan',
+        onPressed: () => _restoreTask(task, index),
+      ),
+    );
+    _saveTasks();
+  }
+
+  void _restoreTask(Task task, int index) {
+    setState(() {
+      // Jika daftar sudah berubah sejak dihapus, index bisa melebihi
+      // panjang daftar; clamp menjaganya tetap di rentang yang sah.
+      _tasks.insert(index.clamp(0, _tasks.length), task);
+    });
+    _saveTasks();
+  }
+
+  /// Isi bagian bawah: daftar tugas, atau pesan kosong yang sesuai.
+  Widget _buildTaskArea() {
+    if (_tasks.isEmpty) return const EmptyState();
+
+    final visibleTasks = _visibleTasks;
+    if (visibleTasks.isEmpty) {
+      return EmptyState(
+        icon: Icons.filter_list_off,
+        message: switch (_filter) {
+          TaskFilter.all => 'Belum ada tugas. Yuk tambahkan!',
+          TaskFilter.active => 'Tidak ada tugas yang belum selesai',
+          TaskFilter.done => 'Tidak ada tugas yang selesai',
+        },
+      );
+    }
+
+    return TaskList(
+      tasks: visibleTasks,
+      onToggle: _toggleTask,
+      onDelete: _deleteTask,
+      onEdit: _editTask,
+    );
   }
 
   @override
@@ -108,24 +188,15 @@ class _HomeScreenState extends State<HomeScreen> {
           : Column(
               children: [
                 TaskInput(onSubmitted: _addTask),
+                if (_tasks.isNotEmpty) ...[
+                  TaskCounter(tasks: _tasks),
+                  FilterBar(
+                    selected: _filter,
+                    onChanged: (filter) => setState(() => _filter = filter),
+                  ),
+                ],
                 // Expanded memberi daftar semua sisa tinggi layar di bawah input.
-                Expanded(
-                  child: _tasks.isEmpty
-                      ? const EmptyState()
-                      // ListView.builder hanya membuat baris yang terlihat di
-                      // layar, jadi tetap ringan walaupun tugasnya banyak.
-                      : ListView.builder(
-                          itemCount: _tasks.length,
-                          itemBuilder: (context, index) {
-                            final task = _tasks[index];
-                            return TaskTile(
-                              task: task,
-                              onToggle: () => _toggleTask(task),
-                              onDelete: () => _deleteTask(task),
-                            );
-                          },
-                        ),
-                ),
+                Expanded(child: _buildTaskArea()),
               ],
             ),
     );
