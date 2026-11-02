@@ -45,6 +45,22 @@ void main() {
     }
   });
 
+  test('menyimpan lagi menimpa data lama', () async {
+    final storage = TaskStorage();
+    final createdAt = DateTime(2026, 11, 1);
+
+    await storage.saveTasks([
+      Task(id: '1', title: 'Lama', createdAt: createdAt),
+      Task(id: '2', title: 'Lama juga', createdAt: createdAt),
+    ]);
+    await storage.saveTasks([
+      Task(id: '3', title: 'Baru', createdAt: createdAt),
+    ]);
+    final loaded = await storage.loadTasks();
+
+    expect(loaded.map((task) => task.title), ['Baru']);
+  });
+
   group('memuat data rusak menghasilkan daftar kosong', () {
     const brokenData = {
       'bukan JSON': 'ini bukan json',

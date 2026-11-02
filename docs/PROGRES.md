@@ -8,7 +8,7 @@ Status yang dipakai: **Belum**, **Sedang dikerjakan**, **Selesai**.
 | 1 | Fitur dasar | Selesai | 2026-11-01 |
 | 2 | Penyimpanan | Selesai | 2026-11-01 |
 | 3 | Fitur tambahan | Selesai | 2026-11-02 |
-| 4 | Tes dan finalisasi | Belum | - |
+| 4 | Tes dan finalisasi | Selesai | 2026-11-02 |
 
 ## Catatan per tahap
 
@@ -41,3 +41,8 @@ Claude menambahkan catatan di bawah ini setiap kali satu tahap selesai, dengan f
 - File dibuat/diubah: `lib/models/task_filter.dart` (baru, enum + `matches`), `lib/widgets/task_counter.dart` (baru), `lib/widgets/filter_bar.dart` (baru), `lib/widgets/edit_task_dialog.dart` (baru), `lib/widgets/task_list.dart` (baru, dipecah dari HomeScreen), `lib/widgets/empty_state.dart` (parameter `message` dan `icon`), `lib/widgets/task_tile.dart` (ListTile + Checkbox, callback `onEdit`), `lib/screens/home_screen.dart`, `lib/app.dart` (`darkTheme`, `themeMode`), `test/widget_test.dart` (14 tes baru, dikelompokkan per fitur; total 38 tes).
 - Keputusan penting: `CheckboxListTile` diganti `ListTile` + `Checkbox` agar ketuk judul = edit, ketuk kotak = centang (disetujui pengguna). Pilihan filter tidak disimpan (selalu "Semua" saat dibuka). Penghitung dan filter disembunyikan saat daftar kosong. Undo memakai closure (`task` dan `index` ditangkap `onPressed`), bukan variabel State. SnackBar memakai `persist: false` karena di Flutter ini SnackBar yang punya action secara bawaan tidak hilang sendiri.
 - Perlu diingat untuk tahap berikutnya: tes widget mencari baris lewat `TaskTile` (bukan `CheckboxListTile`) dan segmen filter lewat `find.descendant` di dalam `SegmentedButton<TaskFilter>`. `test/widget_test.dart` sudah panjang (±440 baris), jadi bisa dipertimbangkan untuk dipecah per widget di Tahap 4. `TaskFilter.matches` dan `TaskCounter` belum punya tes unit tersendiri (baru lewat tes widget).
+
+### Tahap 4 — Tes dan finalisasi
+- File dibuat/diubah: `lib/screens/home_screen.dart` (refactor `_toggleTask` dan `_buildTaskArea`), `pubspec.yaml` (deskripsi, `cupertino_icons` dihapus), `test/models/task_filter_test.dart` (baru), `test/services/task_storage_test.dart` (+1 tes), `test/widget_test.dart` (+2 tes), `android/app/src/main/AndroidManifest.xml` dan `ios/Runner/Info.plist` (nama aplikasi "Daftar Tugas"), `README.md` (ditulis ulang). Total 44 tes.
+- Keputusan penting: temuan tinjauan 1–4 diperbaiki (teks kosong ganda, `_toggleTask` disamakan dengan `_editTask` + jaga `index == -1`, deskripsi pubspec, hapus `cupertino_icons`). Temuan 5–7 sengaja dibiarkan: gagal *membaca* penyimpanan karena error sistem membuat loading berputar terus (dicatat di README sebagai ide pengembangan), `copyWith(id:, createdAt:)` belum dipakai, angka padding 16 berulang.
+- Perlu diingat: README punya placeholder screenshot di `docs/screenshots/` (terang.png, gelap.png, edit.png) dan bagian "Pembuat" yang perlu diisi sendiri. Nama aplikasi untuk Windows/web/macOS/Linux belum diubah (di luar ruang lingkup).

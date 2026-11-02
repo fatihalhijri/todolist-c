@@ -261,6 +261,22 @@ void main() {
 
       expect(find.text('Tidak ada tugas yang selesai'), findsOneWidget);
     });
+
+    testWidgets('Mencentang tugas di filter "Belum" memindahkannya', (
+      tester,
+    ) async {
+      await startApp(tester);
+      await typeTask(tester, 'Belanja');
+      await tapAddButton(tester);
+      await chooseFilter(tester, 'Belum');
+
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      expect(find.text('Tidak ada tugas yang belum selesai'), findsOneWidget);
+
+      await chooseFilter(tester, 'Selesai');
+      expect(find.text('Belanja'), findsOneWidget);
+    });
   });
 
   group('Fitur C: edit tugas', () {
@@ -342,6 +358,25 @@ void main() {
       await startApp(tester);
 
       expect(find.text('Belanja sayur'), findsOneWidget);
+    });
+
+    testWidgets('Mengedit judul tidak menghapus status centang', (
+      tester,
+    ) async {
+      await startApp(tester);
+      await typeTask(tester, 'Belanja');
+      await tapAddButton(tester);
+      await tester.tap(find.byType(Checkbox));
+      await tester.pump();
+
+      await tester.tap(find.text('Belanja'));
+      await tester.pumpAndSettle();
+      await tester.enterText(dialogField(), 'Belanja sayur');
+      await tester.tap(find.text('Simpan'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Belanja sayur'), findsOneWidget);
+      expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isTrue);
     });
   });
 

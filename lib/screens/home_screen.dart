@@ -100,9 +100,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _toggleTask(Task task) {
+    final index = _tasks.indexWhere((t) => t.id == task.id);
+    if (index == -1) return;
+
     setState(() {
-      final index = _tasks.indexWhere((t) => t.id == task.id);
-      _tasks[index] = task.copyWith(isDone: !task.isDone);
+      final current = _tasks[index];
+      _tasks[index] = current.copyWith(isDone: !current.isDone);
     });
     _saveTasks();
   }
@@ -159,14 +162,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final visibleTasks = _visibleTasks;
     if (visibleTasks.isEmpty) {
-      return EmptyState(
-        icon: Icons.filter_list_off,
-        message: switch (_filter) {
-          TaskFilter.all => 'Belum ada tugas. Yuk tambahkan!',
-          TaskFilter.active => 'Tidak ada tugas yang belum selesai',
-          TaskFilter.done => 'Tidak ada tugas yang selesai',
-        },
-      );
+      // Cabang `all` sebenarnya tidak terjadi (sudah ditangani di atas),
+      // tetapi switch pada enum wajib menangani semua nilai.
+      return switch (_filter) {
+        TaskFilter.all => const EmptyState(),
+        TaskFilter.active => const EmptyState(
+          icon: Icons.filter_list_off,
+          message: 'Tidak ada tugas yang belum selesai',
+        ),
+        TaskFilter.done => const EmptyState(
+          icon: Icons.filter_list_off,
+          message: 'Tidak ada tugas yang selesai',
+        ),
+      };
     }
 
     return TaskList(
